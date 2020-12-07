@@ -1,0 +1,213 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec  5 22:06:03 2020
+
+@author: vivo
+"""
+import random
+import copy
+#empty board
+board = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+boardSize = 4
+previous = []
+#print out the current board
+def template():
+    largest = board[0][0]
+    for row in board:
+        for element in row:
+            if element > largest:
+                largest = element
+    #set the number of spaces needed to the lenght of the largest value            
+    numSpaces = len(str(largest))
+    
+    for row in board:
+        currRow = "|"
+        for element in row:
+            if element == 0:
+                currRow += " " * numSpaces + "__|"
+            else:
+                currRow += (" " * (numSpaces - len(str(element)))) + str(element) + "__|"
+        print(currRow)
+        print()
+
+#merge one row left
+#focused on left swapping
+def RowLeft(row):
+    #move everything as far to the left as possible
+    for j in range(boardSize - 1):
+        for i in range(boardSize - 1, 0, -1):
+            if row[i-1]==0:
+                row[i-1] = row[i]
+                row[i] = 0
+    #merge everthing to the left
+    for i in range(boardSize - 1):
+        #test if the current value is identical to the one next to it
+        if row[i] == row[i+1]:
+            row[i]*=2
+            row[i+1] = 0
+    #move everything to the left again
+    for i in range(boardSize - 1, 0, -1):
+        if row[i-1] == 0:
+            row[i-1] = row[i]
+            row[i] = 0
+    return row
+
+#This function reverses the order of one row
+def reverse(row):
+    #add all elements of the row to a new list, in reverse order
+    #reversing the content of each row (reversing the sequence) 
+    new = []
+    for i in range(boardSize - 1, -1, -1):
+        new.append(row[i])
+    return new
+
+#this function transposes the whole board
+#transpose: innerchanging rows and columns
+def transpose(currentBoard):
+    for j in range(boardSize):
+        for i in range(j, boardSize):
+            if not i == j:
+                temp = currentBoard[j][i]
+                currentBoard[j][i] = currentBoard[i][j]
+                currentBoard[i][j] = temp
+    return currentBoard 
+
+#whole board to up
+def to_up(currentBoard):
+  #tranpose, merge all left then transpose back
+  currentBoard = transpose(currentBoard)
+  currentBoard = to_left(currentBoard)
+  currentBoard = transpose(currentBoard)
+  return currentBoard
+
+#whole board to left
+def to_left(currentBoard):
+    for i in range(boardSize):
+        currentBoard[i] = RowLeft(currentBoard[i])
+    return currentBoard
+to_left(board)
+template()
+
+#whole board to down
+def to_down(currentBoard):
+  #transpose, merge it all right, transpose back
+  
+  previous = copy.deepcopy(currentBoard)
+  currentBoard = transpose(currentBoard)
+  currentBoard = to_right(currentBoard)
+  currentBoard = transpose(currentBoard)
+  return currentBoard
+  return previous
+
+#whole board to right
+def to_right(currentBoard):
+    #look at every row in the board
+    for i in range(boardSize):
+        #reverse the row, merge to the left and then reverse back
+        currentBoard[i] = reverse(currentBoard[i])
+        currentBoard[i] = RowLeft(currentBoard[i])
+        currentBoard[i] = reverse(currentBoard[i])
+    return currentBoard
+
+def newvalue():
+    if random.randint(1,8) == 1:
+        return 4
+    else:
+        return 2
+
+def addvalue():
+    RN = random.randint(0, boardSize - 1)
+    CN = random.randint(0, boardSize - 1)
+    
+    while not board[RN][CN] == 0:
+        RN = random.randint(0, boardSize - 1)
+        CN = random.randint(0, boardSize - 1)
+        
+    board[RN][CN] = newvalue()
+    
+def nomoves():
+    for i in range(boardSize - 1):
+        if board[i] == 0:
+            return True
+        else:
+            return False
+    
+def victory():
+    for row in board:
+        if 2048 in row:
+            return True
+    return False
+        
+board = []
+for i in range(boardSize):
+    row = []
+    for j in range(boardSize):
+        row.append(0)
+    board.append(row)
+#fill two spots with random values, to start the game    
+changeable_values = 2
+while changeable_values > 0:
+    RN = random.randint(0, boardSize - 1)
+    CN = random.randint(0, boardSize - 1)
+    
+    if board[RN][CN] == 0:
+        board[RN][CN] = newvalue()
+        changeable_values -= 1
+        
+print("Welcome to 2048!")    
+print("Commands are as follows : ") 
+print("'W' or 'w' : Move Up") 
+print("'S' or 's' : Move Down") 
+print("'A' or 'a' : Move Left") 
+print("'D' or 'd' : Move Right")
+template()
+
+losing = False
+
+#repeat asking the user for new moves while game is continuing.
+while not losing:
+    move = input("enter the command: ")
+    validInput = True
+    #create a copy of the board
+    
+
+    if move== "r":
+        board=tempBoard
+        template()
+    elif move == "d":
+        tempBoard = copy.deepcopy(board)
+        board = to_right(board)
+    elif move == "w":
+        tempBoard = copy.deepcopy(board)
+        board = to_up(board)
+    elif move == "a":
+        tempBoard = copy.deepcopy(board)
+        board = to_left(board)
+    elif move == "s":
+        tempBoard = copy.deepcopy(board)
+        board = to_down(board)
+    elif move == "e":
+       print("You left the game!")
+       break
+
+    else:
+        validInput = False
+    if not validInput:
+        print("Your input was not valid, please try again!")
+    else:
+        #test if their move was unsuccesful
+        if board == tempBoard:
+            print()
+        else:
+            if victory():
+                template()
+                print("You won!")
+                losing = True
+            else:
+                addvalue()
+                
+                template()
+                
+                if nomoves():
+                    print("Sorry, you have no possible moves, you lost!")
+                    losing = True
